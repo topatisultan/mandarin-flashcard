@@ -1,34 +1,47 @@
 # 🎴 Mandarin Web Flashcard System
 
-A web-based learning application built with **Spring Boot** designed to help users learn Mandarin vocabulary using interactive flashcards. This project demonstrates clean architecture principles with a strict separation of concerns, persistent data layer, and responsive user interface.
+A hybrid web learning application and RESTful API built with **Spring Boot** and **Java 21**. Designed to help users master Mandarin vocabulary through interactive 3D flashcards while providing clean JSON endpoints for external client consumption.
 
-## 🚀 Features
-* **Randomized Flashcard Generation:** Smart service layer logic that shuffles cards seamlessly upon every request.
-* **Interactive UI:** Clean 3D-flipping flashcard design leveraging Bootstrap 5 and customized Thymeleaf styling.
-* **Persistent Storage:** Lightweight file-based persistent H2 database to retain data across applications restarts.
-* **Database Seeding:** Automatic schema generation and seed management to deploy ready-to-test dummy data.
+This project demonstrates industry-standard **Clean Architecture (Separation of Concerns)**, persistent data storage, automated database seeding, and interactive OpenAPI documentation.
+
+## 🚀 Key Features
+* **Hybrid Architecture (SSR & REST API):** Serves a responsive web interface via Thymeleaf alongside stateless JSON RESTful endpoints.
+* **Interactive 3D Flashcards:** Smooth CSS 3D-flipping cards powered by Bootstrap 5 with randomized vocabulary generation.
+* **RESTful CRUD Operations:** Full API support to fetch all cards, retrieve random cards, add new vocabulary, and delete entries.
+* **Interactive API Documentation:** Integrated **Swagger UI (OpenAPI 3)** for live endpoint testing directly from the browser.
+* **Persistent Storage & Auto-Seeding:** File-based H2 database to retain data across server restarts, paired with `CommandLineRunner` for initial sample data.
 
 ## 🛠️ Tech Stack
 * **Backend:** Java 21, Spring Boot (Web, Data JPA), Thymeleaf Engine
-* **Database:** H2 Database (File Mode)
+* **API & Documentation:** SpringDoc OpenAPI (Swagger UI)
+* **Database:** H2 Database (Persistent File Mode)
 * **Frontend:** HTML5, CSS3, Bootstrap 5
 * **Build Tool:** Maven
 
 ## 📦 Project Structure
 ```text
 src/main/java/com/portfolio/mandarin_flashcard/
-├── config/             # Database Seeding and Configurations
-├── controller/         # Web HTTP Endpoints Mapping
-├── model/              # Database Entity Definitions
-├── repository/         # Data Access Layer (JPA Repositories)
+├── config/             # Database Seeding & System Configurations
+├── controller/         # Web MVC (@Controller) & REST API (@RestController) Endpoints
+├── model/              # JPA Database Entity Definitions
+├── repository/         # Data Access Layer (Spring Data JPA)
 └── service/            # Core Business Logic Layer
 ```
+
+## 🔌 RESTful API Endpoints
+
+| HTTP Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/flashcards` | Retrieve all stored Mandarin flashcards |
+| `GET` | `/api/flashcards/random` | Retrieve a single randomized flashcard |
+| `POST` | `/api/flashcards` | Add a new flashcard (`hanzi`, `pinyin`, `arti`) |
+| `DELETE` | `/api/flashcards/{id}` | Delete a specific flashcard by its ID |
 
 ## ⚙️ Setup & Installation
 
 ### Prerequisites
 * Java JDK 21
-* Maven (or Maven Wrapper included)
+* Maven (or included Maven Wrapper)
 
 ### How to Run Locally
 1. Clone the repository:
@@ -36,12 +49,11 @@ src/main/java/com/portfolio/mandarin_flashcard/
    git clone https://github.com
    cd mandarin-flashcard
    ```
-2. Configure environment variable and boot up the system using terminal:
+2. Run the application using Maven Wrapper:
    ```powershell
-   $env:JAVA_HOME="PATH_TO_YOUR_JDK_21"
    ./mvnw spring-boot:run
    ```
-3. Access the web interface in your preferred browser:
-   ```text
-   http://localhost:8080
-   ```
+3. Access the application interfaces in your browser:
+    * **Web Flashcard UI:** `http://localhost:8080`
+    * **Swagger API Documentation:** `http://localhost:8080/swagger-ui/index.html`
+    * **H2 Database Console:** `http://localhost:8080/h2-console`
