@@ -1,46 +1,381 @@
 <!DOCTYPE html>
-<html xmlns:th="http://thymeleaf.org">
+<html lang="id" xmlns:th="http://thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Mandarin Web Flashcard</title>
-    <link href="https://jsdelivr.net" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandarin Flashcard Studio</title>
     <style>
-        .card-box { width: 350px; height: 250px; cursor: pointer; perspective: 1000px; }
-        .card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-        .card-box.flipped .card-inner { transform: rotateY(180deg); }
-        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        .card-front { background-color: #ffffff; border: 2px solid #dc3545; }
-        .card-back { background-color: #dc3545; color: white; transform: rotateY(180deg); }
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #31102f 100%);
+            --card-front: rgba(255, 255, 255, 0.08);
+            --card-back: linear-gradient(145deg, #e11d48 0%, #be123c 100%);
+            --accent-gold: #fbbf24;
+            --text-light: #f8fafc;
+            --text-muted: rgba(248, 250, 252, 0.6);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: white;
+            text-decoration: none;
+        }
+        .brand-badge {
+            background: #e11d48;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .nav-actions { display: flex; gap: 10px; }
+        .btn {
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 8px 18px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: white;
+        }
+        .btn-gold { background: var(--accent-gold); color: #0f172a; }
+        .btn-white { background: #f8fafc; color: #0f172a; }
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+        .counter-badge {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--accent-gold);
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+        .flashcard-stage {
+            perspective: 1200px;
+            width: 100%;
+            max-width: 460px;
+            height: 310px;
+            cursor: pointer;
+        }
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-style: preserve-3d;
+        }
+        .flashcard-stage.is-flipped .flashcard-inner { transform: rotateY(180deg); }
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            user-select: none;
+        }
+        .flashcard-front { background: var(--card-front); backdrop-filter: blur(16px); }
+        .flashcard-back { background: var(--card-back); transform: rotateY(180deg); }
+        .hanzi-text {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Heiti SC', sans-serif;
+            font-size: 5rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+        }
+        .pinyin-text { font-size: 1.75rem; font-weight: 600; color: var(--accent-gold); margin-bottom: 0.5rem; }
+        .arti-text { font-size: 2.1rem; font-weight: 700; }
+        .hint-text { color: var(--text-muted); font-size: 0.85rem; margin-top: 1.75rem; }
+        .btn-audio {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .btn-audio:hover { background: var(--accent-gold); color: #0f172a; }
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 2.2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .controls .btn { border-radius: 14px; padding: 12px 22px; font-size: 0.95rem; }
+        .shortcuts {
+            display: flex;
+            gap: 10px;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .shortcut-badge {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            color: #cbd5e1;
+        }
+        kbd {
+            background: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        /* Modal Custom */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 1rem;
+        }
+        .modal-backdrop.show { display: flex; }
+        .modal-box {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            padding: 1.75rem;
+            text-align: left;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+        .form-group input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 1rem;
+        }
+        .form-group input:focus { outline: none; border-color: var(--accent-gold); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; }
     </style>
 </head>
-<body class="bg-light d-flex flex-column align-items-center justify-content-center vh-100">
+<body>
+<nav class="navbar">
+    <a class="brand" href="/">
+        <span class="brand-badge">汉</span>
+        <span>Mandarin Studio</span>
+    </a>
+    <div class="nav-actions">
+        <button class="btn btn-outline" onclick="openModal()">+ Tambah Kartu</button>
+        <a href="/swagger-ui/index.html" target="_blank" class="btn btn-gold">API Docs</a>
+    </div>
+</nav>
 
-<div class="text-center mb-4">
-    <h2 class="fw-bold text-dark">🎴 Mandarin Flashcard</h2>
-    <p class="text-muted">Asah kemampuan bahasa Mandarin Anda dengan kartu interaktif</p>
-</div>
+<main>
+    <div class="counter-badge" id="cardCounter">Memuat kosakata...</div>
 
-<div th:if="${errorMessage}" class="alert alert-warning" role="alert" th:text="${errorMessage}"></div>
+    <div class="flashcard-stage" id="flashcardStage" onclick="flipCard()">
+        <div class="flashcard-inner">
+            <div class="flashcard-face flashcard-front">
+                <button class="btn-audio" onclick="speakHanzi(event)" title="Dengarkan Pelafalan">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11 5L6 9H2v6h4l5 4V5zm4.5 7c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </button>
+                <div class="hanzi-text" id="hanziDisplay">...</div>
+                <div class="hint-text">Klik kartu atau tekan Spasi untuk membalik</div>
+            </div>
 
-<div th:if="${card != null}" class="card-box" onclick="this.classList.toggle('flipped')">
-    <div class="card-inner">
-        <div class="card-front">
-            <h1 class="display-1 fw-bold text-danger" th:text="${card.hanzi}">谢谢</h1>
-            <small class="text-muted position-absolute bottom-0 mb-3">💡 Klik untuk melihat arti</small>
+            <div class="flashcard-face flashcard-back">
+                <button class="btn-audio" onclick="speakHanzi(event)" title="Dengarkan Pelafalan">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11 5L6 9H2v6h4l5 4V5zm4.5 7c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </button>
+                <div class="pinyin-text" id="pinyinDisplay">...</div>
+                <div class="arti-text" id="artiDisplay">...</div>
+                <div class="hint-text">Terjemahan Bahasa Indonesia</div>
+            </div>
         </div>
-        <div class="card-back text-center p-3">
-            <span class="badge bg-white text-danger mb-2">Pinyin</span>
-            <h2 class="fw-bold mb-3" th:text="${card.pinyin}">Xièxie</h2>
-            <hr class="w-50 mx-auto border-white">
-            <span class="badge bg-white text-danger mb-2">Arti</span>
-            <h3 class="fw-normal" th:text="${card.arti}">Terima kasih</h3>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-outline" onclick="prevCard()">← Sebelumnya</button>
+        <button class="btn btn-gold" onclick="randomCard()">Acak Kartu</button>
+        <button class="btn btn-white" onclick="nextCard()">Berikutnya →</button>
+    </div>
+
+    <div class="shortcuts">
+        <span class="shortcut-badge"><kbd>Spasi</kbd> Balik Kartu</span>
+        <span class="shortcut-badge"><kbd>←</kbd> / <kbd>→</kbd> Ganti Kartu</span>
+        <span class="shortcut-badge"><kbd>S</kbd> Putar Suara</span>
+    </div>
+</main>
+
+<div class="modal-backdrop" id="addCardModal" onclick="if(event.target===this) closeModal()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Tambah Kosakata Baru</h3>
+            <button class="btn btn-outline" style="padding: 4px 10px;" onclick="closeModal()">✕</button>
         </div>
+        <form id="addCardForm" onsubmit="saveNewCard(event)">
+            <div class="form-group">
+                <label>Karakter Hanzi</label>
+                <input type="text" id="inputHanzi" placeholder="Contoh: 谢谢" required>
+            </div>
+            <div class="form-group">
+                <label>Pinyin (Nada)</label>
+                <input type="text" id="inputPinyin" placeholder="Contoh: Xièxie" required>
+            </div>
+            <div class="form-group">
+                <label>Arti Bahasa Indonesia</label>
+                <input type="text" id="inputArti" placeholder="Contoh: Terima kasih" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button>
+                <button type="submit" class="btn btn-gold">Simpan ke MySQL</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<div class="mt-4">
-    <a href="/" class="btn btn-danger btn-lg px-5 shadow-sm rounded-pill">Kartu Selanjutnya ➡️</a>
-</div>
+<script>
+    let flashcards = [];
+    let currentIndex = 0;
 
+    async function loadFlashcards() {
+        try {
+            const response = await fetch('/api/flashcards');
+            flashcards = await response.json();
+            if (flashcards.length > 0) {
+                renderCard();
+            } else {
+                document.getElementById('hanziDisplay').innerText = '空';
+                document.getElementById('cardCounter').innerText = 'Belum ada data di MySQL';
+            }
+        } catch (error) {
+            console.error('Gagal memuat kartu:', error);
+        }
+    }
+
+    function renderCard() {
+        const stage = document.getElementById('flashcardStage');
+        stage.classList.remove('is-flipped');
+        setTimeout(() => {
+            const card = flashcards[currentIndex];
+            document.getElementById('hanziDisplay').innerText = card.hanzi;
+            document.getElementById('pinyinDisplay').innerText = card.pinyin;
+            document.getElementById('artiDisplay').innerText = card.arti;
+            document.getElementById('cardCounter').innerText = `Kartu ${currentIndex + 1} dari ${flashcards.length}`;
+        }, 150);
+    }
+
+    function flipCard() { document.getElementById('flashcardStage').classList.toggle('is-flipped'); }
+    function nextCard() { if (flashcards.length) { currentIndex = (currentIndex + 1) % flashcards.length; renderCard(); } }
+    function prevCard() { if (flashcards.length) { currentIndex = (currentIndex - 1 + flashcards.length) % flashcards.length; renderCard(); } }
+    function randomCard() {
+        if (flashcards.length <= 1) return;
+        let newIndex;
+        do { newIndex = Math.floor(Math.random() * flashcards.length); } while (newIndex === currentIndex);
+        currentIndex = newIndex;
+        renderCard();
+    }
+
+    function speakHanzi(event) {
+        event.stopPropagation();
+        if (!flashcards.length) return;
+        const utterance = new SpeechSynthesisUtterance(flashcards[currentIndex].hanzi);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.85;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function openModal() { document.getElementById('addCardModal').classList.add('show'); }
+    function closeModal() { document.getElementById('addCardModal').classList.remove('show'); }
+
+    async function saveNewCard(event) {
+        event.preventDefault();
+        const payload = {
+            hanzi: document.getElementById('inputHanzi').value,
+            pinyin: document.getElementById('inputPinyin').value,
+            arti: document.getElementById('inputArti').value
+        };
+        const response = await fetch('/api/flashcards', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+            document.getElementById('addCardForm').reset();
+            closeModal();
+            await loadFlashcards();
+            currentIndex = flashcards.length - 1;
+            renderCard();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (document.getElementById('addCardModal').classList.contains('show')) return;
+        if (e.code === 'Space') { e.preventDefault(); flipCard(); }
+        if (e.code === 'ArrowRight') nextCard();
+        if (e.code === 'ArrowLeft') prevCard();
+        if (e.code === 'KeyS') speakHanzi(e);
+    });
+
+    loadFlashcards();
+</script>
 </body>
 </html>
